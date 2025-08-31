@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_cors import CORS
 import psycopg2
 import psycopg2.extras
+from werkzeug.security import generate_password_hash, check_password_hash  # For secure passwords
 
 app = Flask(__name__)
 CORS(app)  # allow cross-origin if needed later
@@ -32,16 +33,21 @@ def login():
 
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
-        user = cur.fetchone()
-        cur.close()
-        conn.close()
+        try:
+            # Fetch user by username only
+            cur.execute("SELECT * FROM users WHERE username=%s", (username,))
+            user = cur.fetchone()
+        finally:
+            cur.close()
+            conn.close()
 
-        if user:
+        if user and check_password_hash(user["password"], password):
             session["username"] = user["username"]
+            flash("Login successful!", "success")
             return redirect(url_for("index"))
         else:
             flash("Invalid Username or Password", "danger")
+
     return render_template("login.html")
 
 
@@ -56,19 +62,20 @@ def index():
         cur.execute("SELECT COUNT(*) FROM employees;")
         total_employees = cur.fetchone()[0] or 0
 
-        # adapt this query if you use a different logic for 'Open'
         cur.execute("SELECT COUNT(*) FROM employees WHERE position_status = 'Open';")
         current_hirings = cur.fetchone()[0] or 0
 
-        total_ambulance = 1936  # keep static until you add ambulance data
+        total_ambulance = 1936  # static for now
     finally:
         cur.close()
         conn.close()
 
-    return render_template("index.html",
-                           total_employees=total_employees,
-                           current_hirings=current_hirings,
-                           total_ambulance=total_ambulance)
+    return render_template(
+        "index.html",
+        total_employees=total_employees,
+        current_hirings=current_hirings,
+        total_ambulance=total_ambulance
+    )
 
 
 @app.route("/workforce")
@@ -93,7 +100,6 @@ def workforce():
         cur.close()
         conn.close()
 
-    # render template that expects `employees` and uses `{{ employees | tojson }}`
     return render_template("workforce_insights.html", employees=employees)
 
 
@@ -172,7 +178,6 @@ def add_record():
     if request.method == "GET":
         return render_template("add_record.html")
 
-    # POST (form submission from add_record.html using FormData)
     form = request.form
     f = request.files.get("resume_path")
     resume_filename = f.filename if f else None
@@ -219,6 +224,19 @@ def logout():
 @app.route("/health")
 def health():
     return jsonify({"ok": True})
+
+
+# ---------------- HELPER: Create hashed password ---------------- #
+def create_user(username, password):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    hashed_pw = generate_password_hash(password)
+    try:
+        cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_pw))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
 
 
 # ---------------- RUN ---------------- #
