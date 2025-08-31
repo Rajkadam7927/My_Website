@@ -22,7 +22,7 @@
       <li><a href="{{ url_for('workforce') }}" class="hover:text-red-600">Workforce Insights</a></li>
       <li><a href="{{ url_for('add_record') }}" class="hover:text-red-600">Add Record</a></li>
       <li><a href="{{ url_for('search') }}" class="hover:text-red-600">Search</a></li>
-      <li><a href="{{ url_for('login') }}" class="hover:text-red-600">Login</a></li>
+      <li><a href="{{ url_for('logout') }}" class="hover:text-red-600">Logout</a></li>
     </ul>
   </nav>
 
@@ -30,9 +30,54 @@
   <div class="max-w-6xl mx-auto pt-28 px-4 sm:px-6 lg:px-8">
     <div class="card">
       <h2 class="text-2xl font-bold mb-4">Add New Applicant Record</h2>
-      <form id="addRecordForm">
+      <form id="addRecordForm" method="POST" enctype="multipart/form-data">
 
-        <!-- (form fields same as before, omitted for brevity) -->
+        <!-- Example fields (add all required by backend) -->
+        <label>Prefix</label>
+        <input type="text" name="prefix">
+
+        <label>Name <span class="mandatory">*</span></label>
+        <input type="text" name="name" required>
+
+        <label>Applied Position</label>
+        <input type="text" name="applied_position">
+
+        <label>Finalized Position</label>
+        <input type="text" name="finalized_position">
+
+        <label>Interview Status</label>
+        <select name="interview_status" id="interview_status">
+          <option value="">Select</option>
+          <option value="Scheduled">Scheduled</option>
+          <option value="Cleared">Cleared</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+
+        <label>Status</label>
+        <select name="status" id="status">
+          <option value="">Select</option>
+          <option value="Counter Offer">Counter Offer</option>
+          <option value="Hired">Hired</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+
+        <label>Remark <span id="remarkMandatory" class="mandatory hidden">* Required</span></label>
+        <textarea name="remark" id="remark"></textarea>
+
+        <label>Contact No1</label>
+        <input type="text" name="contact_no1" id="contact_no1" maxlength="10">
+
+        <label>Contact No2</label>
+        <input type="text" name="contact_no2" id="contact_no2" maxlength="10">
+
+        <label>Email</label>
+        <input type="email" name="email">
+
+        <label>Source</label>
+        <input type="text" name="source">
+
+        <label>Resume</label>
+        <input type="file" name="resume_path">
 
         <button type="submit" class="px-6 py-2 bg-sky-600 text-white rounded mt-4">Add Record</button>
       </form>
@@ -72,9 +117,13 @@
       method:"POST",
       body:formData
     }).then(res=>res.json()).then(r=>{
-      alert("Record added successfully!");
-      form.reset();
-      remarkMandatory.classList.add('hidden');
+      if(r.success){
+        alert(r.message || "Record added successfully!");
+        form.reset();
+        remarkMandatory.classList.add('hidden');
+      } else {
+        alert("Error: " + (r.message || "Failed to add record"));
+      }
     }).catch(err=>alert("Error adding record"));
   });
 </script>
