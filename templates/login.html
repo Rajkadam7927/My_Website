@@ -22,6 +22,10 @@
   .spinner { border:3px solid rgba(255,255,255,0.3); border-top:3px solid #fff; border-radius:50%; width:18px; height:18px; animation: spin 1s linear infinite; margin-left:10px; display:none; }
   @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
 
+  .flash-message { margin-top: 1rem; padding:0.8rem; border-radius:0.5rem; font-weight:600; }
+  .flash-danger { background:#fee2e2; color:#b91c1c; }
+  .flash-success { background:#d1fae5; color:#065f46; }
+
   @media (max-width: 1024px) {
     .container { flex-direction: column; }
     .left-side, .right-side { flex:1; }
@@ -42,6 +46,7 @@
   <div class="right-side">
     <div class="login-card">
       <img src="https://img.icons8.com/ios-filled/100/0ea5e9/ambulance.png" alt="Ambulance Icon">
+
       <!-- Flask login form -->
       <form method="POST" action="{{ url_for('login') }}">
         <input type="text" name="username" placeholder="Username" required>
@@ -57,7 +62,9 @@
         {% if messages %}
           <div class="mt-4">
             {% for category, message in messages %}
-              <div class="text-red-600 font-medium">{{ message }}</div>
+              <div class="flash-message {% if category == 'danger' %}flash-danger{% else %}flash-success{% endif %}">
+                {{ message }}
+              </div>
             {% endfor %}
           </div>
         {% endif %}
@@ -68,7 +75,7 @@
 </div>
 
 <script>
-  // Optional: show spinner on submit
+  // Show spinner on submit
   const form = document.querySelector("form");
   const spinner = document.getElementById("spinner");
   form.addEventListener("submit", () => {
