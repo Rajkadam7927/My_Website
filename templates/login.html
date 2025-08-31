@@ -60,7 +60,7 @@ const users = [
 
 // Redirect if already logged in
 if(sessionStorage.getItem("loggedIn") === "true"){
-  window.location.href = "index.html";  // redirect to your dashboard page
+  window.location.href = "/index";  // redirect to your dashboard page
 }
 
 document.getElementById("loginBtn").addEventListener("click", ()=>{
