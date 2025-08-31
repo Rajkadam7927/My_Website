@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SumeetSSG HR Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #f5f5f5;
+      font-family: "Times New Roman", Times, serif;
+    }
+    .wave-wrapper {
+      position: absolute;
+      width: 200%;
+      overflow: hidden;
+      line-height: 0;
+    }
+    .wave svg {
+      position: relative;
+      display: block;
+      width: 200%;
+      height: 100px;
+      animation: waveMove 10s linear infinite;
+    }
+    @keyframes waveMove {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .hero-title {
+      font-size: clamp(2rem, 5vw, 4rem);
+    }
+    .hero-subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
+    }
+    .hero-button {
+      font-size: clamp(0.875rem, 2vw, 1.25rem);
+      padding: clamp(0.5rem, 1vw, 1rem) clamp(1.5rem, 3vw, 2.5rem);
+    }
+  </style>
+</head>
+<body class="relative text-gray-800 overflow-x-hidden">
+
+  <!-- Hero Section -->
+  <div class="relative w-full flex items-center justify-center" style="height: 65vh; max-height: 700px;">
+    <div class="absolute inset-0 overflow-hidden">
+      <img src="./images.jpg" alt="Ambulance" class="w-full h-full object-cover object-top opacity-40">
+      <div class="absolute inset-0 bg-white bg-opacity-30"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="absolute top-3 left-3 right-3 z-10 flex justify-between items-center px-6 sm:px-10 py-3 bg-white/30 rounded-xl shadow-sm backdrop-blur-sm">
+      <h1 class="text-3xl sm:text-4xl font-bold text-black">SumeetSSG HR Portal</h1>
+      <ul class="flex space-x-6 sm:space-x-8 text-lg sm:text-xl font-medium">
+        <li><a href="{{ url_for('workforce') }}" class="hover:text-red-600">Workforce Insights</a></li>
+        <li><a href="{{ url_for('add_record') }}" class="hover:text-red-600">Add Record</a></li>
+        <li><a href="{{ url_for('search') }}" class="hover:text-red-600">Search</a></li>
+        <li><a href="{{ url_for('logout') }}" class="hover:text-red-600">Logout</a></li>
+      </ul>
+    </nav>
+
+    <!-- Hero Content -->
+    <div class="relative z-10 flex flex-col justify-center items-center text-center px-4 sm:px-6">
+      <h2 class="hero-title font-extrabold leading-tight text-black">
+        Connecting People, Driving Growth
+      </h2>
+      <p class="hero-subtitle mt-3 sm:mt-4 text-black max-w-3xl">
+        A seamless platform to manage talent, track performance, and enhance productivity.
+      </p>
+    </div>
+
+    <!-- Smooth Waves -->
+    <div class="wave-wrapper" style="z-index: 5; bottom: 0;">
+      <div class="wave">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,0 C200,100 400,20 600,80 C800,140 1000,30 1200,90 L1200,120 L0,120 Z" fill="white" fill-opacity="0.9"></path>
+        </svg>
+      </div>
+    </div>
+    <div class="wave-wrapper" style="z-index: 4; bottom: 5px;">
+      <div class="wave" style="animation-duration: 15s;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,0 C150,80 350,10 600,70 C850,120 1050,20 1200,80 L1200,120 L0,120 Z" fill="white" fill-opacity="0.7"></path>
+        </svg>
+      </div>
+    </div>
+    <div class="wave-wrapper" style="z-index: 3; bottom: 10px;">
+      <div class="wave" style="animation-duration: 20s;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,0 C100,90 300,20 600,60 C900,100 1100,10 1200,70 L1200,120 L0,120 Z" fill="white" fill-opacity="0.5"></path>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Section -->
+  <section class="py-16 relative z-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 justify-items-center">
+
+      <!-- Card 1 -->
+      <div class="bg-white/40 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg transition p-3 text-center flex flex-col items-center justify-center" style="max-height: 200px; aspect-ratio: 1 / 1; width: 100%; max-width: 220px;">
+        <h3 class="text-4xl sm:text-5xl font-extrabold mb-1">{{ total_ambulance }}</h3>
+        <p class="text-gray-800 text-lg sm:text-xl font-medium">Total Ambulance</p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="bg-white/40 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg transition p-3 text-center flex flex-col items-center justify-center" style="max-height: 200px; aspect-ratio: 1 / 1; width: 100%; max-width: 220px;">
+        <h3 class="text-4xl sm:text-5xl font-extrabold mb-1">{{ total_employees }}</h3>
+        <p class="text-gray-800 text-lg sm:text-xl font-medium">Total Employees</p>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="bg-white/40 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg transition p-3 text-center flex flex-col items-center justify-center" style="max-height: 200px; aspect-ratio: 1 / 1; width: 100%; max-width: 220px;">
+        <h3 class="text-4xl sm:text-5xl font-extrabold mb-1">{{ current_hirings }}</h3>
+        <p class="text-gray-800 text-lg sm:text-xl font-medium">Current Hirings</p>
+      </div>
+
+    </div>
+  </section>
+
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Workforce Insights</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+  <!-- Navbar -->
+  <nav class="bg-gray-800 p-4">
+    <div class="flex space-x-4">
+      <a href="{{ url_for('index') }}" class="text-white">Home</a>
+      <a href="{{ url_for('add_record') }}" class="text-white">Add Record</a>
+      <a href="{{ url_for('search') }}" class="text-white">Search Record</a>
+      <a href="{{ url_for('workforce') }}" class="text-white">Workforce Insights</a>
+    </div>
+  </nav>
+
+  <div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-6">Workforce Insights Dashboard</h1>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-lg font-semibold">Total Applicants</h2>
+        <p id="total-applicants" class="text-2xl font-bold">0</p>
+      </div>
+      <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-lg font-semibold">Average Experience</h2>
+        <p id="average-experience" class="text-2xl font-bold">0</p>
+      </div>
+      <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-lg font-semibold">Top Source</h2>
+        <p id="top-source" class="text-2xl font-bold">N/A</p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white p-4 rounded shadow mb-6">
+      <label for="position-filter" class="mr-2 font-semibold">Filter by Position:</label>
+      <select id="position-filter" class="border p-2 rounded">
+        <option value="All">All</option>
+      </select>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white p-4 rounded shadow">
+        <canvas id="statusChart"></canvas>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <canvas id="experienceChart"></canvas>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <canvas id="sourceChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employees data from Flask -->
+  <script>
+    const employees = {{ employees | tojson }};
+  </script>
+
+  <script>
+    let statusChartInstance, experienceChartInstance, sourceChartInstance;
+
+    // Populate Position Filter
+    function populatePositionFilter() {
+      const filter = document.getElementById("position-filter");
+      const positions = [...new Set(employees.map(emp => emp.finalized_position))].filter(p => p);
+      positions.forEach(position => {
+        const option = document.createElement("option");
+        option.value = position;
+        option.textContent = position;
+        filter.appendChild(option);
+      });
+    }
+
+    // Update KPIs
+    function updateKPIs(filteredEmployees) {
+      document.getElementById("total-applicants").textContent = filteredEmployees.length;
+      const avgExp =
+        filteredEmployees.reduce((sum, e) => sum + (parseFloat(e.experience_years) || 0), 0) /
+        (filteredEmployees.length || 1);
+      document.getElementById("average-experience").textContent = avgExp.toFixed(1);
+      const sourceCounts = {};
+      filteredEmployees.forEach(e => {
+        if (e.source) {
+          sourceCounts[e.source] = (sourceCounts[e.source] || 0) + 1;
+        }
+      });
+      const topSource = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1])[0];
+      document.getElementById("top-source").textContent = topSource ? topSource[0] : "N/A";
+    }
+
+    // Render charts
+    function renderFromEmployees(filteredEmployees) {
+      // Destroy old charts if they exist
+      if (statusChartInstance) statusChartInstance.destroy();
+      if (experienceChartInstance) experienceChartInstance.destroy();
+      if (sourceChartInstance) sourceChartInstance.destroy();
+
+      // Status chart
+      const statusCounts = {};
+      filteredEmployees.forEach(e => {
+        if (e.interview_status) {
+          statusCounts[e.interview_status] = (statusCounts[e.interview_status] || 0) + 1;
+        }
+      });
+      statusChartInstance = new Chart(document.getElementById("statusChart"), {
+        type: "pie",
+        data: {
+          labels: Object.keys(statusCounts),
+          datasets: [{
+            label: "Interview Status",
+            data: Object.values(statusCounts),
+            backgroundColor: ["#60a5fa", "#f87171", "#34d399", "#fbbf24"]
+          }]
+        }
+      });
+
+      // Experience chart
+      const expData = filteredEmployees.map(e => parseFloat(e.experience_years) || 0);
+      experienceChartInstance = new Chart(document.getElementById("experienceChart"), {
+        type: "bar",
+        data: {
+          labels: expData.map((_, i) => `Applicant ${i+1}`),
+          datasets: [{
+            label: "Experience (years)",
+            data: expData,
+            backgroundColor: "#60a5fa"
+          }]
+        }
+      });
+
+      // Source chart
+      const sourceCounts = {};
+      filteredEmployees.forEach(e => {
+        if (e.source) {
+          sourceCounts[e.source] = (sourceCounts[e.source] || 0) + 1;
+        }
+      });
+      sourceChartInstance = new Chart(document.getElementById("sourceChart"), {
+        type: "doughnut",
+        data: {
+          labels: Object.keys(sourceCounts),
+          datasets: [{
+            label: "Sources",
+            data: Object.values(sourceCounts),
+            backgroundColor: ["#34d399", "#fbbf24", "#f87171", "#60a5fa", "#a78bfa"]
+          }]
+        }
+      });
+    }
+
+    // Apply filter
+    document.getElementById("position-filter").addEventListener("change", function () {
+      const value = this.value;
+      const filtered = value === "All" ? employees : employees.filter(e => e.finalized_position === value);
+      updateKPIs(filtered);
+      renderFromEmployees(filtered);
+    });
+
+    // Init
+    populatePositionFilter();
+    updateKPIs(employees);
+    renderFromEmployees(employees);
+  </script>
+</body>
+</html>
