@@ -52,27 +52,24 @@ def login():
 def index():
     if "username" not in session:
         return redirect(url_for("login"))
-
-    conn = get_db_connection()
-    cur = conn.cursor()
     try:
+        conn = get_db_connection()
+        cur = conn.cursor()
         cur.execute("SELECT COUNT(*) FROM employees;")
         total_employees = cur.fetchone()[0] or 0
-
-        cur.execute("SELECT COUNT(*) FROM employees WHERE position_status = 'Open';")
+        cur.execute("SELECT COUNT(*) FROM employees WHERE position_status='Open';")
         current_hirings = cur.fetchone()[0] or 0
-
         total_ambulance = 1936
-    finally:
         cur.close()
         conn.close()
+        return render_template("index.html",
+                               total_employees=total_employees,
+                               current_hirings=current_hirings,
+                               total_ambulance=total_ambulance)
+    except Exception as e:
+        print("Error in /index:", e)
+        return "Internal Server Error"
 
-    return render_template(
-        "index.html",
-        total_employees=total_employees,
-        current_hirings=current_hirings,
-        total_ambulance=total_ambulance
-    )
 
 # ---------------- WORKFORCE INSIGHTS ---------------- #
 @app.route("/workforce")
