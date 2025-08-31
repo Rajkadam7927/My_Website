@@ -12,7 +12,7 @@
     <div class="flex space-x-4">
       <a href="{{ url_for('index') }}" class="text-white">Home</a>
       <a href="{{ url_for('add_record') }}" class="text-white">Add Record</a>
-      <a href="{{ url_for('search') }}" class="text-white">Search Record</a>
+      <a href="{{ url_for('search_page') }}" class="text-white">Search Record</a>
       <a href="{{ url_for('workforce') }}" class="text-white">Workforce Insights</a>
     </div>
   </nav>
@@ -60,16 +60,15 @@
 
   <!-- Employees data from Flask -->
   <script>
-    const employees = {{ employees | tojson }};
+    const employees = {{ employees | default([]) | tojson }};
   </script>
 
   <script>
     let statusChartInstance, experienceChartInstance, sourceChartInstance;
 
-    // Populate Position Filter
     function populatePositionFilter() {
       const filter = document.getElementById("position-filter");
-      const positions = [...new Set(employees.map(emp => emp.finalized_position))].filter(p => p);
+      const positions = [...new Set(employees.map(emp => emp.finalized_position).filter(p => p))];
       positions.forEach(position => {
         const option = document.createElement("option");
         option.value = position;
@@ -78,26 +77,23 @@
       });
     }
 
-    // Update KPIs
     function updateKPIs(filteredEmployees) {
       document.getElementById("total-applicants").textContent = filteredEmployees.length;
+
       const avgExp =
         filteredEmployees.reduce((sum, e) => sum + (parseFloat(e.experience_years) || 0), 0) /
         (filteredEmployees.length || 1);
       document.getElementById("average-experience").textContent = avgExp.toFixed(1);
+
       const sourceCounts = {};
       filteredEmployees.forEach(e => {
-        if (e.source) {
-          sourceCounts[e.source] = (sourceCounts[e.source] || 0) + 1;
-        }
+        if (e.source) sourceCounts[e.source] = (sourceCounts[e.source] || 0) + 1;
       });
       const topSource = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1])[0];
       document.getElementById("top-source").textContent = topSource ? topSource[0] : "N/A";
     }
 
-    // Render charts
     function renderFromEmployees(filteredEmployees) {
-      // Destroy old charts if they exist
       if (statusChartInstance) statusChartInstance.destroy();
       if (experienceChartInstance) experienceChartInstance.destroy();
       if (sourceChartInstance) sourceChartInstance.destroy();
@@ -105,19 +101,13 @@
       // Status chart
       const statusCounts = {};
       filteredEmployees.forEach(e => {
-        if (e.interview_status) {
-          statusCounts[e.interview_status] = (statusCounts[e.interview_status] || 0) + 1;
-        }
+        if (e.interview_status) statusCounts[e.interview_status] = (statusCounts[e.interview_status] || 0) + 1;
       });
       statusChartInstance = new Chart(document.getElementById("statusChart"), {
         type: "pie",
         data: {
           labels: Object.keys(statusCounts),
-          datasets: [{
-            label: "Interview Status",
-            data: Object.values(statusCounts),
-            backgroundColor: ["#60a5fa", "#f87171", "#34d399", "#fbbf24"]
-          }]
+          datasets: [{ data: Object.values(statusCounts), backgroundColor: ["#60a5fa","#f87171","#34d399","#fbbf24"] }]
         }
       });
 
@@ -127,35 +117,22 @@
         type: "bar",
         data: {
           labels: expData.map((_, i) => `Applicant ${i+1}`),
-          datasets: [{
-            label: "Experience (years)",
-            data: expData,
-            backgroundColor: "#60a5fa"
-          }]
+          datasets: [{ label: "Experience (years)", data: expData, backgroundColor: "#60a5fa" }]
         }
       });
 
       // Source chart
-      const sourceCounts = {};
-      filteredEmployees.forEach(e => {
-        if (e.source) {
-          sourceCounts[e.source] = (sourceCounts[e.source] || 0) + 1;
-        }
-      });
+      const sourceCountsChart = {};
+      filteredEmployees.forEach(e => { if (e.source) sourceCountsChart[e.source] = (sourceCountsChart[e.source] || 0) + 1; });
       sourceChartInstance = new Chart(document.getElementById("sourceChart"), {
         type: "doughnut",
         data: {
-          labels: Object.keys(sourceCounts),
-          datasets: [{
-            label: "Sources",
-            data: Object.values(sourceCounts),
-            backgroundColor: ["#34d399", "#fbbf24", "#f87171", "#60a5fa", "#a78bfa"]
-          }]
+          labels: Object.keys(sourceCountsChart),
+          datasets: [{ data: Object.values(sourceCountsChart), backgroundColor: ["#34d399","#fbbf24","#f87171","#60a5fa","#a78bfa"] }]
         }
       });
     }
 
-    // Apply filter
     document.getElementById("position-filter").addEventListener("change", function () {
       const value = this.value;
       const filtered = value === "All" ? employees : employees.filter(e => e.finalized_position === value);
@@ -163,7 +140,6 @@
       renderFromEmployees(filtered);
     });
 
-    // Init
     populatePositionFilter();
     updateKPIs(employees);
     renderFromEmployees(employees);
