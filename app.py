@@ -34,7 +34,6 @@ def login():
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         try:
-            # Fetch user by username only
             cur.execute("SELECT * FROM users WHERE username=%s", (username,))
             user = cur.fetchone()
         finally:
@@ -65,7 +64,7 @@ def index():
         cur.execute("SELECT COUNT(*) FROM employees WHERE position_status = 'Open';")
         current_hirings = cur.fetchone()[0] or 0
 
-        total_ambulance = 1936  # static for now
+        total_ambulance = 1936  # static value
     finally:
         cur.close()
         conn.close()
