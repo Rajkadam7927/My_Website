@@ -3,67 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SumeetSSG — Search Employee</title>
+<title>Search Employee</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<style>
-  body { font-family: "Times New Roman", Times, serif; background:#f5f5f5; }
-  .card { background: rgba(255,255,255,0.72); backdrop-filter: blur(6px); border-radius: 1rem; box-shadow: 0 6px 20px rgba(2,6,23,0.06); padding: 1rem; }
-  input, select { padding:0.4rem; border:1px solid #ccc; border-radius:0.4rem; }
-  table { width:100%; border-collapse: collapse; }
-  th, td { border: 1px solid #ccc; padding: 0.5rem; text-align:left; }
-  th { background:#f0f0f0; }
-</style>
 </head>
-<body class="relative text-gray-800 overflow-x-hidden">
+<body class="bg-gray-100 font-serif">
 
-<!-- Navbar -->
-<nav class="absolute top-3 left-3 right-3 z-10 flex justify-between items-center px-6 sm:px-10 py-3 bg-white/30 rounded-xl shadow-sm backdrop-blur-sm">
-  <h1 class="text-3xl sm:text-4xl font-bold text-black">SumeetSSG HR Portal</h1>
-  <ul class="flex space-x-6 sm:space-x-8 text-lg sm:text-xl font-medium">
-    <li><a href="{{ url_for('workforce') }}" class="hover:text-red-600">Workforce Insights</a></li>
-    <li><a href="{{ url_for('add_record') }}" class="hover:text-red-600">Add Record</a></li>
-    <li><a href="{{ url_for('search') }}" class="hover:text-red-600">Search</a></li>
-    <li><a href="{{ url_for('login') }}" class="hover:text-red-600">Login</a></li>
+<nav class="bg-white shadow p-4 flex justify-between">
+  <h1 class="text-2xl font-bold">SumeetSSG HR Portal</h1>
+  <ul class="flex space-x-4">
+    <li><a href="{{ url_for('workforce') }}">Workforce</a></li>
+    <li><a href="{{ url_for('add_record') }}">Add Record</a></li>
+    <li><a href="{{ url_for('search') }}">Search</a></li>
+    <li><a href="{{ url_for('logout') }}">Logout</a></li>
   </ul>
 </nav>
 
-<!-- Main container -->
-<div class="max-w-7xl mx-auto pt-36 px-4 sm:px-6 lg:px-8">
-
-  <!-- Search Card -->
-  <div class="card mb-6 flex gap-4 items-center">
-    <input type="text" id="searchNumber" placeholder="Enter Contact Number" class="flex-1" maxlength="10">
-    <button id="searchBtn" class="px-4 py-2 bg-sky-600 text-white rounded">Search</button>
+<div class="max-w-6xl mx-auto p-6 mt-6">
+  <div class="mb-4 flex gap-2">
+    <input type="text" id="searchNumber" placeholder="Enter Contact Number" maxlength="10" class="border p-2 rounded flex-1">
+    <button id="searchBtn" class="px-4 py-2 bg-blue-600 text-white rounded">Search</button>
   </div>
 
-  <!-- Results Table -->
-  <div id="resultsContainer" class="overflow-x-auto hidden">
-    <table>
-      <thead>
+  <div class="overflow-x-auto hidden" id="resultsContainer">
+    <table class="min-w-full border">
+      <thead class="bg-gray-200">
         <tr>
-          <th>Prefix</th>
           <th>Name</th>
           <th>Applied Position</th>
-          <th>Interview Status</th>
-          <th>Finalized Position</th>
           <th>Status</th>
-          <th>Position Status</th>
-          <th>Remark</th>
           <th>Contact No1</th>
           <th>Contact No2</th>
-          <th>Email</th>
-          <th>Source</th>
-          <th>Source Other</th>
-          <th>Education</th>
-          <th>Mode of Interview</th>
-          <th>Experience Years</th>
-          <th>Current Company</th>
-          <th>Current CTC</th>
-          <th>Expected CTC</th>
-          <th>Notice Period</th>
-          <th>Offers Status</th>
-          <th>Joining Date</th>
           <th>Resume</th>
           <th>Action</th>
         </tr>
@@ -74,107 +44,61 @@
 </div>
 
 <script>
-const editableColumns = [
-  "interview_status","finalized_position","mode_of_interview","experience_years",
-  "current_company","current_ctc","expected_ctc","notice_period","offers_status",
-  "joining_date","status","remark"
-];
+const editableCols = ["applied_position","status","contact_no1","contact_no2"];
 
-document.getElementById("searchBtn").addEventListener("click", () => {
+document.getElementById("searchBtn").addEventListener("click",()=>{
   const num = document.getElementById("searchNumber").value.trim();
-  if (num.length !== 10 || isNaN(num)) {
-    Swal.fire("Enter a valid 10-digit number");
-    return;
-  }
+  if(num.length!==10){ Swal.fire("Enter valid 10-digit number"); return; }
 
   fetch(`/search_employee?contact=${num}`)
-    .then(res => res.json())
-    .then(data => {
-      if (!data || data.length === 0) {
-        Swal.fire("Employee data not found");
-        document.getElementById("resultsContainer").classList.add("hidden");
-        return;
-      }
+    .then(res=>res.json())
+    .then(data=>{
+      if(!data.length){ Swal.fire("Employee not found"); document.getElementById("resultsContainer").classList.add("hidden"); return;}
       renderTable(data[0]);
-    })
-    .catch(err => Swal.fire("Error fetching data"));
+    });
 });
 
-function renderTable(emp) {
+function renderTable(emp){
   const tbody = document.getElementById("resultsBody");
-  tbody.innerHTML = "";
+  tbody.innerHTML="";
   const tr = document.createElement("tr");
 
-  for (const key in emp) {
-    if (key === "id") continue;
+  ["name","applied_position","status","contact_no1","contact_no2"].forEach(col=>{
     const td = document.createElement("td");
-
-    if (editableColumns.includes(key)) {
-      let el;
-      if (["status","interview_status","mode_of_interview","offers_status","joining_date"].includes(key)) {
-        el = document.createElement(key==="joining_date" ? "input" : "select");
-
-        if(key==="status") {
-          ["Final Select","Join","Yet To Join","Offer Extended","Counter Offer"].forEach(v=>{
-            const o = document.createElement("option"); o.value = v; o.textContent = v;
-            if(v===emp[key]) o.selected = true; el.appendChild(o);
-          });
-        } else if(key==="interview_status") {
-          ["Screening","Screen Reject","L1 Selected","L2 Selected","L1 Rejected","L2 Rejected","Not To Be Scheduled","Scheduled"].forEach(v=>{
-            const o = document.createElement("option"); o.value=v; o.textContent=v;
-            if(v===emp[key]) o.selected = true; el.appendChild(o);
-          });
-        } else if(key==="mode_of_interview") {
-          ["Face to Face","Virtual","Walking","Online"].forEach(v=>{
-            const o = document.createElement("option"); o.value=v; o.textContent=v;
-            if(v===emp[key]) o.selected = true; el.appendChild(o);
-          });
-        } else if(key==="offers_status") {
-          ["Accepted","Unaccepted"].forEach(v=>{
-            const o = document.createElement("option"); o.value=v; o.textContent=v;
-            if(v===emp[key]) o.selected = true; el.appendChild(o);
-          });
-        } else if(key==="joining_date") {
-          el.type="date"; el.value = emp[key] || "";
-        }
-      } else {
-        el = document.createElement("input"); el.type="text"; el.value = emp[key] || "";
-      }
-      el.setAttribute("data-key", key);
-      td.appendChild(el);
-    } else {
-      td.textContent = emp[key] || "";
-    }
-    td.setAttribute("data-key", key);
+    if(editableCols.includes(col)){
+      const input = document.createElement("input");
+      input.value = emp[col]||"";
+      input.setAttribute("data-key",col);
+      td.appendChild(input);
+    } else td.textContent = emp[col]||"";
     tr.appendChild(td);
-  }
+  });
 
-  // Resume
+  // Resume upload
   const tdResume = document.createElement("td");
   const resumeInput = document.createElement("input");
   resumeInput.type="file"; resumeInput.accept=".pdf,.doc,.docx";
-  tdResume.appendChild(resumeInput); tr.appendChild(tdResume);
+  tdResume.appendChild(resumeInput);
+  tr.appendChild(tdResume);
 
-  // Action button
+  // Action
   const tdAction = document.createElement("td");
   const saveBtn = document.createElement("button");
-  saveBtn.textContent = "Save"; saveBtn.className = "px-2 py-1 bg-green-600 text-white rounded";
-  saveBtn.addEventListener("click", ()=>{
-    const updated = {};
-    editableColumns.forEach(k=>{
-      const val = tr.querySelector(`[data-key='${k}']`);
-      if(val) updated[k] = val.value;
+  saveBtn.textContent="Save";
+  saveBtn.className="px-2 py-1 bg-green-600 text-white rounded";
+  saveBtn.addEventListener("click",()=>{
+    const updated={};
+    editableCols.forEach(k=>{
+      updated[k]=tr.querySelector(`[data-key='${k}']`).value;
     });
-    fetch(`/update_employee/${emp.id}`, {
+    fetch(`/update_employee/${emp.id}`,{
       method:"POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(updated)
-    }).then(res=>res.json()).then(r=>{
-      if(r.success) Swal.fire("Data saved successfully!");
-      else Swal.fire("Error saving data");
-    });
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(updated)
+    }).then(res=>res.json()).then(r=>Swal.fire(r.success?"Success":"Error",r.message,r.success?"success":"error"));
   });
-  tdAction.appendChild(saveBtn); tr.appendChild(tdAction);
+  tdAction.appendChild(saveBtn);
+  tr.appendChild(tdAction);
 
   tbody.appendChild(tr);
   document.getElementById("resultsContainer").classList.remove("hidden");
