@@ -42,11 +42,13 @@
 <body class="relative text-gray-800 overflow-x-hidden">
 
   <!-- Hero Section -->
-  <div class="relative w-full flex items-center justify-center" style="height: 65vh; max-height: 700px;">
-    <div class="absolute inset-0 overflow-hidden">
-      <img src="./images.jpg" alt="Ambulance" class="w-full h-full object-cover object-top opacity-40">
-      <div class="absolute inset-0 bg-white bg-opacity-30"></div>
-    </div>
+<!-- Hero Section -->
+<div class="relative w-full flex items-center justify-center" style="height: 65vh; max-height: 700px;">
+  <div class="absolute inset-0 overflow-hidden">
+    <img src="{{ url_for('static', filename='images.jpg') }}" alt="Ambulance" class="w-full h-full object-cover object-top opacity-40">
+    <div class="absolute inset-0 bg-white bg-opacity-30"></div>
+  </div>
+
 
     <!-- Navbar -->
     <nav class="absolute top-3 left-3 right-3 z-10 flex justify-between items-center px-6 sm:px-10 py-3 bg-white/30 rounded-xl shadow-sm backdrop-blur-sm">
