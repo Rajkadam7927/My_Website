@@ -3,18 +3,17 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_cors import CORS
 import psycopg2
 import psycopg2.extras
-from werkzeug.security import generate_password_hash, check_password_hash  # For secure passwords
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-CORS(app)  # allow cross-origin if needed later
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")  # set on Render
+CORS(app)
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
 
-DATABASE_URL = os.environ.get("DATABASE_URL")  # set on Render (postgres://...)
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db_connection():
     if DATABASE_URL:
         return psycopg2.connect(DATABASE_URL, sslmode='require')
-    # fallback for local dev (optional)
     return psycopg2.connect(
         host=os.environ.get("DB_HOST", "localhost"),
         dbname=os.environ.get("DB_NAME", "your_db"),
@@ -23,8 +22,7 @@ def get_db_connection():
         port=os.environ.get("DB_PORT", "5432")
     )
 
-# ---------------- ROUTES ---------------- #
-
+# ---------------- LOGIN ---------------- #
 @app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -49,7 +47,7 @@ def login():
 
     return render_template("login.html")
 
-
+# ---------------- DASHBOARD ---------------- #
 @app.route("/index")
 def index():
     if "username" not in session:
@@ -64,7 +62,7 @@ def index():
         cur.execute("SELECT COUNT(*) FROM employees WHERE position_status = 'Open';")
         current_hirings = cur.fetchone()[0] or 0
 
-        total_ambulance = 1936  # static value
+        total_ambulance = 1936
     finally:
         cur.close()
         conn.close()
@@ -76,7 +74,7 @@ def index():
         total_ambulance=total_ambulance
     )
 
-
+# ---------------- WORKFORCE INSIGHTS ---------------- #
 @app.route("/workforce")
 def workforce():
     if "username" not in session:
@@ -94,9 +92,8 @@ def workforce():
             FROM employees
             ORDER BY id DESC
         """)
-        employees = cur.fetchall() or []  # Ensure it's a list even if empty
+        employees = cur.fetchall() or []
 
-        # Ensure all expected keys exist to prevent JS errors
         expected_keys = [
             "id","prefix","name","applied_position","interview_status","finalized_position",
             "status","position_status","remark","contact_no1","contact_no2","email","source",
@@ -106,139 +103,129 @@ def workforce():
         for emp in employees:
             for key in expected_keys:
                 if key not in emp or emp[key] is None:
-                    emp[key] = ""  # default empty string
+                    emp[key] = ""
     finally:
         cur.close()
         conn.close()
 
     return render_template("workforce_insights.html", employees=employees)
 
-
-
-@app.route("/search")
-def search_page():
-    if "username" not in session:
-        return redirect(url_for("login"))
-    return render_template("search.html")
-
-
+# ---------------- SEARCH EMPLOYEE ---------------- #
 @app.route("/search_employee")
 def search_employee():
     if "username" not in session:
-        return jsonify([]), 401
-
-    contact = request.args.get("contact", "").strip()
-    if not contact:
         return jsonify([])
+
+    contact = request.args.get("contact","")
+    if not contact: return jsonify([])
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
-        cur.execute("""
-            SELECT * FROM employees
-            WHERE contact_no1 = %s OR contact_no2 = %s
-            ORDER BY id DESC
-        """, (contact, contact))
-        rows = cur.fetchall()
+        cur.execute("SELECT * FROM employees WHERE contact_no1=%s OR contact_no2=%s", (contact, contact))
+        employee = cur.fetchall()
+        keys = [desc[0] for desc in cur.description]
+        for emp in employee:
+            for k in keys:
+                if k not in emp or emp[k] is None:
+                    emp[k] = ""
     finally:
         cur.close()
         conn.close()
-    return jsonify(rows)
+    return jsonify(employee)
 
-
+# ---------------- UPDATE EMPLOYEE ---------------- #
 @app.route("/update_employee/<int:emp_id>", methods=["POST"])
 def update_employee(emp_id):
     if "username" not in session:
-        return jsonify({"success": False, "message": "Not logged in"}), 401
+        return jsonify({"success":False, "message":"Not logged in"})
 
-    data = request.get_json() or {}
-    allowed = {
-        "interview_status","finalized_position","mode_of_interview","experience_years",
-        "current_company","current_ctc","expected_ctc","notice_period","offers_status",
-        "joining_date","status","remark","contact_no1","contact_no2","email","source","source_other"
-    }
-    set_parts = []
-    values = []
-    for k, v in data.items():
-        if k in allowed:
-            set_parts.append(f"{k} = %s")
-            values.append(v)
-    if not set_parts:
-        return jsonify({"success": False, "message": "No updatable fields provided"}), 400
+    data = request.get_json()
+    if not data: 
+        return jsonify({"success":False, "message":"No data provided"})
 
-    values.append(emp_id)
-    sql = f"UPDATE employees SET {', '.join(set_parts)} WHERE id = %s"
+    # Optional: define required fields
+    required_fields = ["status", "interview_status"]
+    for field in required_fields:
+        if field in data and not data[field]:
+            return jsonify({"success":False, "message":f"{field} is required"})
+
+    filtered_data = {k:v for k,v in data.items() if v != ""}
+
+    if not filtered_data:
+        return jsonify({"success":False, "message":"No fields to update"})
+
+    set_clause = ", ".join([f"{k}=%s" for k in filtered_data.keys()])
+    values = list(filtered_data.values()) + [emp_id]
+
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute(sql, values)
+        cur.execute(f"UPDATE employees SET {set_clause} WHERE id=%s", values)
         conn.commit()
-    except Exception as e:
-        conn.rollback()
-        return jsonify({"success": False, "message": str(e)}), 500
     finally:
         cur.close()
         conn.close()
-    return jsonify({"success": True})
 
+    return jsonify({"success":True, "message":"Data updated successfully"})
 
-@app.route("/add_record", methods=["GET", "POST"])
+# ---------------- ADD RECORD ---------------- #
+@app.route("/add_record", methods=["GET","POST"])
 def add_record():
     if "username" not in session:
-        return redirect(url_for("login")) if request.method == "GET" else (jsonify({"success": False, "message": "Not logged in"}), 401)
+        return redirect(url_for("login"))
 
-    if request.method == "GET":
-        return render_template("add_record.html")
+    required_fields = ["name","applied_position","contact_no1","status"]  # example
 
-    form = request.form
-    f = request.files.get("resume_path")
-    resume_filename = f.filename if f else None
+    if request.method=="POST":
+        try:
+            data = request.form.to_dict()
+            file = request.files.get("resume_path")
+            resume_path = ""
+            if file and file.filename:
+                os.makedirs("resumes", exist_ok=True)
+                resume_path = f"resumes/{file.filename}"
+                file.save(resume_path)
+            data['resume_path'] = resume_path
 
-    fields = [
-        "prefix","name","applied_position","interview_status","finalized_position","status",
-        "position_status","remark","contact_no1","contact_no2","email","source","source_other",
-        "education","mode_of_interview","experience_years","current_company","current_ctc",
-        "expected_ctc","notice_period","offers_status","joining_date","resume_path"
-    ]
-    values = []
-    for fld in fields:
-        if fld == "resume_path":
-            values.append(resume_filename)
-        else:
-            values.append(form.get(fld))
+            # Validate required fields
+            for field in required_fields:
+                if not data.get(field):
+                    return jsonify({"success":False, "message":f"{field} is required"})
 
-    placeholders = ",".join(["%s"] * len(fields))
-    cols = ",".join(fields)
-    sql = f"INSERT INTO employees ({cols}) VALUES ({placeholders})"
+            # Only insert non-empty fields
+            insert_data = {k:v for k,v in data.items() if v != ""}
 
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute(sql, values)
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        return jsonify({"success": False, "message": str(e)}), 500
-    finally:
-        cur.close()
-        conn.close()
+            columns = insert_data.keys()
+            values = [insert_data[col] for col in columns]
 
-    return jsonify({"success": True, "message": "Record added successfully"})
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(f"""
+                INSERT INTO employees ({','.join(columns)}) VALUES ({','.join(['%s']*len(values))})
+            """, values)
+            conn.commit()
+            cur.close()
+            conn.close()
+            return jsonify({"success":True, "message":"Record added successfully"})
+        except Exception as e:
+            return jsonify({"success":False, "message":str(e)})
 
+    return render_template("add_record.html")
 
+# ---------------- LOGOUT ---------------- #
 @app.route("/logout")
 def logout():
     session.pop("username", None)
     flash("You have been logged out", "info")
     return redirect(url_for("login"))
 
-
+# ---------------- HEALTH CHECK ---------------- #
 @app.route("/health")
 def health():
     return jsonify({"ok": True})
 
-
-# ---------------- HELPER: Create hashed password ---------------- #
+# ---------------- HELPER: Create User ---------------- #
 def create_user(username, password):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -249,7 +236,6 @@ def create_user(username, password):
     finally:
         cur.close()
         conn.close()
-
 
 # ---------------- RUN ---------------- #
 if __name__ == "__main__":
