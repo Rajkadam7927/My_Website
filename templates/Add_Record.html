@@ -1,131 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Record — SumeetSSG HR Portal</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { font-family: "Times New Roman", Times, serif; background: #f5f5f5; }
-    .card { background: rgba(255,255,255,0.72); backdrop-filter: blur(6px); border-radius: 1rem; box-shadow: 0 6px 20px rgba(2,6,23,0.06); padding: 1rem; margin-bottom:1rem;}
-    label { font-weight: 500; }
-    input, select, textarea { width: 100%; border-radius: 0.5rem; border: 1px solid #ccc; padding: 0.5rem; }
-    .mandatory { color:red; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Record — SumeetSSG HR Portal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="relative text-gray-800 overflow-x-hidden">
+<body class="bg-gray-100 font-serif">
 
-  <!-- Navbar -->
-  <nav class="absolute top-3 left-3 right-3 z-10 flex justify-between items-center px-6 sm:px-10 py-3 bg-white/30 rounded-xl shadow-sm backdrop-blur-sm">
-    <h1 class="text-3xl sm:text-4xl font-bold text-black">SumeetSSG HR Portal</h1>
-    <ul class="flex space-x-6 sm:space-x-8 text-lg sm:text-xl font-medium">
-      <li><a href="{{ url_for('workforce') }}" class="hover:text-red-600">Workforce Insights</a></li>
-      <li><a href="{{ url_for('add_record') }}" class="hover:text-red-600">Add Record</a></li>
-      <li><a href="{{ url_for('search') }}" class="hover:text-red-600">Search</a></li>
-      <li><a href="{{ url_for('logout') }}" class="hover:text-red-600">Logout</a></li>
-    </ul>
-  </nav>
+<nav class="bg-white shadow p-4 flex justify-between">
+  <h1 class="text-2xl font-bold">SumeetSSG HR Portal</h1>
+  <ul class="flex space-x-4">
+    <li><a href="{{ url_for('workforce') }}">Workforce</a></li>
+    <li><a href="{{ url_for('add_record') }}">Add Record</a></li>
+    <li><a href="{{ url_for('search') }}">Search</a></li>
+    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+  </ul>
+</nav>
 
-  <!-- Main Form Container -->
-  <div class="max-w-6xl mx-auto pt-28 px-4 sm:px-6 lg:px-8">
-    <div class="card">
-      <h2 class="text-2xl font-bold mb-4">Add New Applicant Record</h2>
-      <form id="addRecordForm" method="POST" enctype="multipart/form-data">
-
-        <!-- Example fields (add all required by backend) -->
-        <label>Prefix</label>
-        <input type="text" name="prefix">
-
-        <label>Name <span class="mandatory">*</span></label>
-        <input type="text" name="name" required>
-
-        <label>Applied Position</label>
-        <input type="text" name="applied_position">
-
-        <label>Finalized Position</label>
-        <input type="text" name="finalized_position">
-
-        <label>Interview Status</label>
-        <select name="interview_status" id="interview_status">
-          <option value="">Select</option>
-          <option value="Scheduled">Scheduled</option>
-          <option value="Cleared">Cleared</option>
-          <option value="Rejected">Rejected</option>
-        </select>
-
-        <label>Status</label>
-        <select name="status" id="status">
-          <option value="">Select</option>
-          <option value="Counter Offer">Counter Offer</option>
-          <option value="Hired">Hired</option>
-          <option value="Rejected">Rejected</option>
-        </select>
-
-        <label>Remark <span id="remarkMandatory" class="mandatory hidden">* Required</span></label>
-        <textarea name="remark" id="remark"></textarea>
-
-        <label>Contact No1</label>
-        <input type="text" name="contact_no1" id="contact_no1" maxlength="10">
-
+<div class="max-w-4xl mx-auto p-6 mt-6 bg-white rounded shadow">
+  <h2 class="text-xl font-bold mb-4">Add New Applicant</h2>
+  <form id="addRecordForm" enctype="multipart/form-data">
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label>Name <span class="text-red-600">*</span></label>
+        <input type="text" name="name" required class="border p-2 rounded w-full">
+      </div>
+      <div>
+        <label>Applied Position <span class="text-red-600">*</span></label>
+        <input type="text" name="applied_position" required class="border p-2 rounded w-full">
+      </div>
+      <div>
+        <label>Contact No1 <span class="text-red-600">*</span></label>
+        <input type="text" name="contact_no1" maxlength="10" required class="border p-2 rounded w-full">
+      </div>
+      <div>
         <label>Contact No2</label>
-        <input type="text" name="contact_no2" id="contact_no2" maxlength="10">
-
-        <label>Email</label>
-        <input type="email" name="email">
-
-        <label>Source</label>
-        <input type="text" name="source">
-
+        <input type="text" name="contact_no2" maxlength="10" class="border p-2 rounded w-full">
+      </div>
+      <div>
+        <label>Status <span class="text-red-600">*</span></label>
+        <select name="status" required class="border p-2 rounded w-full">
+          <option value="">Select</option>
+          <option>Final Select</option>
+          <option>Join</option>
+          <option>Yet To Join</option>
+          <option>Offer Extended</option>
+          <option>Counter Offer</option>
+        </select>
+      </div>
+      <div>
         <label>Resume</label>
-        <input type="file" name="resume_path">
-
-        <button type="submit" class="px-6 py-2 bg-sky-600 text-white rounded mt-4">Add Record</button>
-      </form>
+        <input type="file" name="resume_path" accept=".pdf,.doc,.docx" class="border p-2 rounded w-full">
+      </div>
     </div>
-  </div>
+    <button type="submit" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded">Add Record</button>
+  </form>
+</div>
 
 <script>
-  const statusEl = document.getElementById('status');
-  const interviewEl = document.getElementById('interview_status');
-  const remarkEl = document.getElementById('remark');
-  const remarkMandatory = document.getElementById('remarkMandatory');
-  const form = document.getElementById('addRecordForm');
-
-  function checkRemarkMandatory() {
-    if(interviewEl.value === "Scheduled" || statusEl.value === "Counter Offer") {
-      remarkMandatory.classList.remove('hidden');
-      remarkEl.required = true;
-    } else {
-      remarkMandatory.classList.add('hidden');
-      remarkEl.required = false;
-    }
-  }
-
-  interviewEl.addEventListener('change', checkRemarkMandatory);
-  statusEl.addEventListener('change', checkRemarkMandatory);
-
-  form.addEventListener('submit', function(e){
-    e.preventDefault();
-    
-    const contact1 = document.getElementById('contact_no1').value.trim();
-    const contact2 = document.getElementById('contact_no2').value.trim();
-    if(contact1.length !== 10 || isNaN(contact1)) { alert("Contact No1 must be 10 digits"); return; }
-    if(contact2 && (contact2.length !== 10 || isNaN(contact2))) { alert("Contact No2 must be 10 digits"); return; }
-
-    const formData = new FormData(form);
-    fetch("/add_record", {
-      method:"POST",
-      body:formData
-    }).then(res=>res.json()).then(r=>{
+document.getElementById("addRecordForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  const formData = new FormData(this);
+  fetch("/add_record", { method:"POST", body:formData })
+    .then(res=>res.json())
+    .then(r=>{
       if(r.success){
-        alert(r.message || "Record added successfully!");
-        form.reset();
-        remarkMandatory.classList.add('hidden');
+        Swal.fire("Success", r.message, "success");
+        this.reset();
       } else {
-        alert("Error: " + (r.message || "Failed to add record"));
+        Swal.fire("Error", r.message, "error");
       }
-    }).catch(err=>alert("Error adding record"));
-  });
+    }).catch(err=>Swal.fire("Error","Something went wrong","error"));
+});
 </script>
 </body>
 </html>
