@@ -87,19 +87,32 @@ def workforce():
     try:
         cur.execute("""
             SELECT
-              id, prefix, name, applied_position, interview_status, finalized_position,
-              status, position_status, remark, contact_no1, contact_no2, email, source,
-              source_other, education, mode_of_interview, experience_years, current_company,
-              current_ctc, expected_ctc, notice_period, offers_status, joining_date, resume_path
+                id, prefix, name, applied_position, interview_status, finalized_position,
+                status, position_status, remark, contact_no1, contact_no2, email, source,
+                source_other, education, mode_of_interview, experience_years, current_company,
+                current_ctc, expected_ctc, notice_period, offers_status, joining_date, resume_path
             FROM employees
             ORDER BY id DESC
         """)
-        employees = cur.fetchall()
+        employees = cur.fetchall() or []  # Ensure it's a list even if empty
+
+        # Ensure all expected keys exist to prevent JS errors
+        expected_keys = [
+            "id","prefix","name","applied_position","interview_status","finalized_position",
+            "status","position_status","remark","contact_no1","contact_no2","email","source",
+            "source_other","education","mode_of_interview","experience_years","current_company",
+            "current_ctc","expected_ctc","notice_period","offers_status","joining_date","resume_path"
+        ]
+        for emp in employees:
+            for key in expected_keys:
+                if key not in emp or emp[key] is None:
+                    emp[key] = ""  # default empty string
     finally:
         cur.close()
         conn.close()
 
     return render_template("workforce_insights.html", employees=employees)
+
 
 
 @app.route("/search")
