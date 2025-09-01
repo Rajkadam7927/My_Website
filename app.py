@@ -77,29 +77,22 @@ def index():
     )
 
 
-@app.route("/workforce")
-def workforce():
+@app.route("/workforce_insights")
+def workforce_insights():
     if "username" not in session:
         return redirect(url_for("login"))
 
+    # Example: safely fetch employee department distribution
     conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur = conn.cursor()
     try:
-        cur.execute("""
-            SELECT
-              id, prefix, name, applied_position, interview_status, finalized_position,
-              status, position_status, remark, contact_no1, contact_no2, email, source,
-              source_other, education, mode_of_interview, experience_years, current_company,
-              current_ctc, expected_ctc, notice_period, offers_status, joining_date, resume_path
-            FROM employees
-            ORDER BY id DESC
-        """)
-        employees = cur.fetchall()
+        cur.execute("SELECT department, COUNT(*) FROM employees GROUP BY department;")
+        department_data = cur.fetchall() or []
     finally:
         cur.close()
         conn.close()
 
-    return render_template("workforce_insights.html", employees=employees)
+    return render_template("workforce_insights.html", department_data=department_data)
 
 
 @app.route("/search")
