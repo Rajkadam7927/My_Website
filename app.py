@@ -77,22 +77,45 @@ def index():
     )
 
 
-@app.route("/workforce_insights")
-def workforce_insights():
+@app.route("/workforce")
+def workforce_data():
     if "username" not in session:
         return redirect(url_for("login"))
 
-    # Example: safely fetch employee department distribution
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute("SELECT department, COUNT(*) FROM employees GROUP BY department;")
-        department_data = cur.fetchall() or []
+        cur.execute("""
+            SELECT 
+                name,
+                applied_position,
+                finalized_position,
+                interview_status,
+                source,
+                experience_years,
+                status
+            FROM employees;
+        """)
+        rows = cur.fetchall()
     finally:
         cur.close()
         conn.close()
 
-    return render_template("workforce_insights.html", department_data=department_data)
+    # Map results to JSON
+    data = []
+    for r in rows:
+        data.append({
+            "name": r[0],
+            "applied_position": r[1],
+            "finalized_position": r[2],
+            "interview_status": r[3],
+            "source": r[4],
+            "experience_years": float(r[5]) if r[5] is not None else None,
+            "status": r[6]
+        })
+
+    return jsonify(data)
+
 
 
 @app.route("/search")
